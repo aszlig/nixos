@@ -7,16 +7,17 @@ let
   lighttpd = pkgs.lighttpd;
   lightyCfgFile = pkgs.writeText "lighttpd.conf" lightyConf;
 
-  toLightyList = items:
-    concatStringsSep ", " (map (u: "\"${escape ["\""] u}\"") items);
+  lightyEscape = value: "\"${escape ["\""] value}\"";
+
+  toLightyList = items: concatStringsSep ", " (map lightyEscape items);
 
   lightyConf = ''
-    server.document-root = "${cfg.defaultDocroot}"
+    server.document-root = ${lightyEscape cfg.defaultDocroot}
     server.port = ${toString cfg.defaultPort}
     server.modules = (${toLightyList (map (x: "mod_" + x) enabledModules)})
-    server.username = "${cfg.user}"
-    server.groupname = "${cfg.group}"
-    server.errorlog = "${cfg.logDir}/errors.log"
+    server.username = ${lightyEscape cfg.user}
+    server.groupname = ${lightyEscape cfg.group}
+    server.errorlog = ${lightyEscape (cfg.logDir + "/errors.log")}
     server.upload-dirs = (${toLightyList cfg.uploadDirs})
     index-file.names = (${toLightyList cfg.indexFileNames})
     ${concatStringsSep "\n" modulesConfig}
