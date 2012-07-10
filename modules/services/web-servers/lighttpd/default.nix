@@ -21,8 +21,26 @@ let
     server.upload-dirs = (${toLightyList cfg.uploadDirs})
     index-file.names = (${toLightyList cfg.indexFileNames})
     ${concatStringsSep "\n" modulesConfig}
+    ${mkVirtualHosts cfg.virtualHosts}
     ${cfg.configuration}
   '';
+
+  mkVirtualHosts = vhosts: let
+    genVHost = h: let
+      op =
+        if h.type == "static" then "=="
+        else if h.type == "!static" then "!="
+        else if h.type == "regex" then "=~"
+        else if h.type == "!regex" then "!~"
+        else throw "Unknown virtual host match type ${h.type}!";
+    in
+      ''
+        $HTTP["host"] ${op} ${lightyEscape h.on} {
+          server.document-root = ${lightyEscape h.docroot}
+          ${if h ? configuration then h.configuration else ""}
+        }
+      '';
+  in concatStringsSep "else " (map genVHost vhosts);
 
   getCfgList = check: getter: attrs:
     attrValues (mapAttrs getter (filterAttrs (_: check) attrs));
@@ -81,13 +99,29 @@ in {
       description = "Default port where lighttpd should listen on.";
     };
 
+    virtualHosts = mkOption {
+      default = [];
+      description = "Virtual host definitions.";
+      example = [
+        {
+          type = "static";
+          on = "www.example.com";
+          docroot = "/path/to/docroot";
+        }
+        {
+          type = "regex";
+          on = "^www\.example\.(?:net|org)\$";
+          docroot = "/path/to/another/docroot";
+        }
+      ];
+    };
+
     configuration = mkOption {
       default = "";
-      description = "The configuration of lighttpd.";
+      description = "Additional lighttpd configuration.";
       example = ''
-        $HTTP["url"] =~ "^/example" {
-          server.document-root = "/path/to/docroot/"
-        }
+        server.max-keep-alive-requests = 4
+        server.max-keep-alive-idle = 4
       '';
     };
 
