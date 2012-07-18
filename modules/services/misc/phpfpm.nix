@@ -15,17 +15,22 @@ let
   '';
 
   getPoolContent = pool: let
+    iniEsc = val:
+      if builtins.isString val then "\"${escape ["\""] val}\""
+      else if val == true then "on"
+      else if val == false then "off"
+      else toString val;
     dotNS = ns: if ns != "" then (ns + ".") else "";
     traverse = p: ns: let
       travMap = key: val:
         if ns == "" && (key == "env" || (substring 0 4 key) == "php_") then
-          let l = mapAttrsToList (k: v: "${key}[${k}] = ${toString v}") val;
+          let l = mapAttrsToList (k: v: "${key}[${k}] = ${iniEsc v}") val;
           in concatStringsSep "\n" l
         else if key == "value" then
-          "${ns} = ${toString val}"
+          "${ns} = ${iniEsc val}"
         else if isAttrs val then
           traverse val "${dotNS ns}${key}"
-        else "${dotNS ns}${key} = ${toString val}";
+        else "${dotNS ns}${key} = ${iniEsc val}";
     in concatStringsSep "\n" (mapAttrsToList travMap p);
   in traverse pool "";
 
