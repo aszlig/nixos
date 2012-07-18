@@ -11,16 +11,24 @@ let
     error_log = ${cfg.logDir}/error.log
     daemonize = no
 
-    [default]
-    user = ${cfg.user}
-    group = ${cfg.group}
-
-    listen = ${cfg.stateDir}/default.socket
-    pm = dynamic
-    pm.max_children = 400
-    pm.min_spare_servers = 10
-    pm.max_spare_servers = 30
+    ${pools}
   '';
+
+  getPoolContent = pool: let
+    dotNS = ns: if ns != "" then (ns + ".") else "";
+    traverse = p: ns: let
+      travMap = key: val:
+        if key == "value" then
+          "${ns} = ${toString val}"
+        else if isAttrs val then
+          traverse val "${dotNS ns}${key}"
+        else "${dotNS ns}${key} = ${toString val}";
+    in concatStringsSep "\n" (mapAttrsToList travMap p);
+  in traverse pool "";
+
+  pools = let
+    f = section: content: "[${section}]\n${getPoolContent content}";
+  in concatStringsSep "\n\n" (mapAttrsToList f cfg.pools);
 
   fpmPackage = pkgs.php5_3fpm;
 in {
@@ -49,6 +57,30 @@ in {
       logDir = mkOption {
         default = "/var/log/phpfpm";
         description = "Directory where to put in log files.";
+      };
+
+      pools = mkOption {
+        default = {
+          default = {
+            user = cfg.user;
+            group = cfg.group;
+            listen = "${cfg.stateDir}/default.socket";
+            pm = {
+              value = "dynamic";
+              max_children = 400;
+              min_spare_servers = 10;
+              max_spare_servers = 30;
+            };
+          };
+        };
+
+        description = ''
+          Specify the pools the FastCGI Process Manager should manage.
+
+          This is specified by using an attribute set which maps roughly 1:1
+          to ini-file syntax, with the exception that the main value of a
+          namespace has to be specified by an attribute called 'value'.
+        '';
       };
     };
   };
