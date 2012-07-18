@@ -18,7 +18,10 @@ let
     dotNS = ns: if ns != "" then (ns + ".") else "";
     traverse = p: ns: let
       travMap = key: val:
-        if key == "value" then
+        if ns == "" && (key == "env" || (substring 0 4 key) == "php_") then
+          let l = mapAttrsToList (k: v: "${key}[${k}] = ${toString v}") val;
+          in concatStringsSep "\n" l
+        else if key == "value" then
           "${ns} = ${toString val}"
         else if isAttrs val then
           traverse val "${dotNS ns}${key}"
@@ -80,6 +83,10 @@ in {
           This is specified by using an attribute set which maps roughly 1:1
           to ini-file syntax, with the exception that the main value of a
           namespace has to be specified by an attribute called 'value'.
+
+          In addition, attributes called 'env' or starting with 'php_' are
+          formatted with square brackets, like for example 'env[TMP] = /tmp',
+          which corresponds to 'env.TMP = "/tmp"'.
         '';
       };
     };
