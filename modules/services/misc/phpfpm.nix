@@ -4,8 +4,7 @@ with pkgs.lib;
 
 let
   cfg = config.services.phpfpm;
-  fpmCfgFile = pkgs.writeText "phpfpm.conf" fpmConf;
-  fpmConf = ''
+  fpmCfgFile = pkgs.writeText "phpfpm.conf" ''
     [global]
     pid = ${cfg.stateDir}/php-fpm.pid
     error_log = ${cfg.logDir}/error.log
