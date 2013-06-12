@@ -22,11 +22,10 @@ let
 
   postgresql = postgresqlAndPlugins cfg.package;
 
-  flags = optional cfg.enableTCPIP "-i";
-
   # The main PostgreSQL configuration file.
   configFile = pkgs.writeText "postgresql.conf"
     ''
+      listen_addresses = '${cfg.listenAddresses}'
       hba_file = '${pkgs.writeText "pg_hba.conf" cfg.authentication}'
       ident_file = '${pkgs.writeText "pg_ident.conf" cfg.identMap}'
       log_destination = 'syslog'
@@ -100,10 +99,17 @@ in
         '';
       };
 
-      enableTCPIP = mkOption {
-        default = false;
+      listenAddresses = mkOption {
+        default = "";
+        example = "localhost";
         description = ''
-          Whether to run PostgreSQL with -i flag to enable TCP/IP connections.
+          Specifies the TCP/IP address(es) on which the server is to listen for
+          connections from client applications. Use the default ("") in order to
+          not listen to TCP/IP at all and only accept Unix-domain sockets.
+
+          For more information about this value, please have a look at:
+
+          http://www.postgresql.org/docs/9.2/static/runtime-config-connection.html#GUC-LISTEN-ADDRESSES
         '';
       };
 
@@ -177,7 +183,7 @@ in
           ''; # */
 
         serviceConfig =
-          { ExecStart = "@${postgresql}/bin/postgres postgres ${toString flags}";
+          { ExecStart = "@${postgresql}/bin/postgres postgres";
             User = "postgres";
             Group = "postgres";
             PermissionsStartOnly = true;
