@@ -100,14 +100,6 @@ in
         '';
       };
 
-      authMethod = mkOption {
-        default = " ident sameuser ";
-        description = ''
-          How to authorize users.
-          Note: ident needs absolute trust to all allowed client hosts.
-        '';
-      };
-
       enableTCPIP = mkOption {
         default = false;
         description = ''
