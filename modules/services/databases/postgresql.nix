@@ -33,7 +33,13 @@ let
       ${cfg.extraConfig}
     '';
 
-  pre84 = versionOlder (builtins.parseDrvName postgresql.name).version "8.4";
+  version = (builtins.parseDrvName postgresql.name).version;
+  localAuthMethod =
+    if !versionOlder version "9.1"
+      then "peer"
+    else if versionOlder version "8.4"
+      then "ident sameuser"
+    else "ident";
 
 in
 
@@ -140,7 +146,7 @@ in
     services.postgresql.authentication =
       ''
         # Generated file; do not edit!
-        local all all              ident ${optionalString pre84 "sameuser"}
+        local all all              ${localAuthMethod}
         host  all all 127.0.0.1/32 md5
         host  all all ::1/128      md5
       '';
