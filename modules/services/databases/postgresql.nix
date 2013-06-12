@@ -22,11 +22,17 @@ let
 
   postgresql = postgresqlAndPlugins cfg.package;
 
+  authentication = ''
+    # Generated file; do not edit!
+    local all root ${localAuthMethod}
+    ${cfg.authentication}
+  '';
+
   # The main PostgreSQL configuration file.
   configFile = pkgs.writeText "postgresql.conf"
     ''
       listen_addresses = '${cfg.listenAddresses}'
-      hba_file = '${pkgs.writeText "pg_hba.conf" cfg.authentication}'
+      hba_file = '${pkgs.writeText "pg_hba.conf" authentication}'
       ident_file = '${pkgs.writeText "pg_ident.conf" cfg.identMap}'
       log_destination = 'syslog'
       ${cfg.extraConfig}
@@ -86,9 +92,15 @@ in
       };
 
       authentication = mkOption {
-        default = "";
+        default = ''
+          host all all 127.0.0.1/32 md5
+          host all all ::1/128      md5
+        '';
         description = ''
           Defines how users authenticate themselves to the server.
+          This is in the format of the pg_hba.conf, for documentation, see:
+
+          http://www.postgresql.org/docs/9.2/static/auth-pg-hba-conf.html
         '';
       };
 
@@ -140,14 +152,6 @@ in
   ###### implementation
 
   config = mkIf config.services.postgresql.enable {
-
-    services.postgresql.authentication =
-      ''
-        # Generated file; do not edit!
-        local all all              ${localAuthMethod}
-        host  all all 127.0.0.1/32 md5
-        host  all all ::1/128      md5
-      '';
 
     users.extraUsers = singleton
       { name = "postgres";
