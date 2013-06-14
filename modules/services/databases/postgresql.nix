@@ -98,9 +98,10 @@ in
         '';
         description = ''
           Defines how users authenticate themselves to the server.
-          This is in the format of the pg_hba.conf, for documentation, see:
 
-          http://www.postgresql.org/docs/9.2/static/auth-pg-hba-conf.html
+          This is in the format of <link
+          xlink:href="http://www.postgresql.org/docs/9.2/static/auth-pg-hba-conf.html">the
+          <filename>pg_hba.conf</filename> configuration file</link>.
         '';
       };
 
@@ -119,9 +120,8 @@ in
           connections from client applications. Use the default ("") in order to
           not listen to TCP/IP at all and only accept Unix-domain sockets.
 
-          For more information about this value, please have a look at:
-
-          http://www.postgresql.org/docs/9.2/static/runtime-config-connection.html#GUC-LISTEN-ADDRESSES
+          For more information on this value, please visit <link
+          xlink:href="http://www.postgresql.org/docs/9.2/static/runtime-config-connection.html#GUC-LISTEN-ADDRESSES"/>.
         '';
       };
 
